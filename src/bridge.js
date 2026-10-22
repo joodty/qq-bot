@@ -46,6 +46,7 @@ import { createBotOnboarding } from './bot-onboarding.js';
 import { createHostedLoginClient } from './hosted-login-client.js';
 import { createTenantRuntime } from './tenant-runtime.js';
 import { createTrialBudget } from './trial-budget.js';
+import { createEngineHandoff, normalizeEngineHandoff } from './engine-handoff.js';
 import {
   loadSlang,
   saveSlang,
@@ -742,6 +743,7 @@ function loadConfig() {
     consolePort: file.consolePort ?? 3100,
     consoleToken: file.consoleToken ?? '',
     consoleAuth: { secureCookie: file.consoleAuth?.secureCookie === true, registrationEnabled: file.consoleAuth?.registrationEnabled !== false },
+    engineHandoff: normalizeEngineHandoff(file.engineHandoff),
     botId: file.botId ?? BOT_ID,
     expectedQQ: file.expectedQQ == null ? null : String(file.expectedQQ),
     managerWorker: file.managerWorker === true,
@@ -1456,6 +1458,8 @@ let stateDirHardened = null;
 // ── 主流程 ──────────────────────────────────────────────────────────────────
 async function main() {
   const cfg = loadConfig();
+  const engineHandoff = createEngineHandoff(() => cfg);
+  let engineHandoffStatus = { stopped: 0, failed: 0 };
   cfg.expectedQQ = validateRuntimeIdentity(cfg, runtimePaths).expectedQQ;
   let selfDisplayName = '', selfUserId = '';
   let botManager = null, peerQQs = new Set(), peerStateKnown = !cfg.managerWorker;
@@ -2762,7 +2766,7 @@ async function main() {
         return {amount:daily.totals.cost+(tenantRuntime?.uncertainCost(key,date)||0),currency:daily.currency,complete:Number.isFinite(daily.totals.cost)&&!daily.totals.estimated};
       }});
     budgetController=createBudgetController({budget:conversationBudget,ledger:tokenLedger,
-      sendPrompt:params=>api.sessions.prompt(params),
+      sendPrompt:params=>{engineHandoff.assertChatEnabled();return api.sessions.prompt(params);},
       stopSession:sid=>withTimeout(api.stopSessionWork(sid),DSH_CONTROL_TIMEOUT_MS,'budget stop'),log});
     for(const row of budgetController.active())if(row.sessionId)api.events.follow(row.sessionId);
     for(const sid of learnerOrigins.keys())api.events.follow(sid);
@@ -2801,6 +2805,7 @@ async function main() {
     }
   }
   async function budgetedPrompt(key, params, options = {}) {
+    engineHandoff.assertChatEnabled();
     if(!budgetController)return api.sessions.prompt(params);
     const direct=options.direct ?? (!learnerSessions.has(params.sessionId));
     const source=learnerSessions.has(params.sessionId)?'learning':'chat';
@@ -3365,6 +3370,7 @@ async function main() {
     }
   };
   function startDshWatch() {
+    if (engineHandoff.managementOnly()) return;
     if (dshCheckStarted) return;
     dshCheckStarted = true;
     checkDsh();
@@ -3872,6 +3878,10 @@ async function main() {
         else sendJson({ ok: false, error: '请先使用账号密码登录' }, 401);
         return;
       }
+      if (!engineHandoff.requestAllowed({ method: req.method, pathname: url.pathname, isAgent: isAgentRequest })) {
+        sendJson({ ok: false, error: '聊天引擎已移交，旧控制台仅保留账号、QQ验证和只读资料', code: 'ENGINE_HANDOFF_MANAGEMENT_ONLY' }, 503);
+        return;
+      }
       if(tenantRoutes && await tenantRoutes.route({req,url,principal:consolePrincipal,isAgent:isAgentRequest,readBody,sendJson,writeAllowed:authWriteAllowed}))return;
       if (await managementRoute({ req, url, principal: consolePrincipal, isAgent: isAgentRequest, tokenMatches,
         readBody, sendJson, writeAllowed: authWriteAllowed })) return;
@@ -4061,6 +4071,7 @@ async function main() {
             allowGroups: cfg.allow?.groups ?? [],
             allowPrivate: cfg.allow?.private ?? [],
             groupMentionOnly: cfg.groupMentionOnly,
+            engineHandoff: { managementOnly: engineHandoff.managementOnly(), ...engineHandoffStatus },
             socialV2Paused: socialV2.paused,
             // 上游健康只给操作者看：它包含网关诊断信息（good/hint），
             // 属于管理侧观测，不该进 QQ 会话里那个受限的智能体视图。
@@ -7851,8 +7862,8 @@ async function main() {
   // 更新 lastAiReplyAt / 活跃调度，实际群里什么都没收到，而且只有一行滚动日志能看出问题。
   const lastSendFailed = new Map(); // key -> true（下一次成功即清除）
 
-  function sendToQQ(key, msg, {extraGuard} = {}) {
-    const assertSendAllowed = captureSendGuard(key);
+  function sendToQQ(key, msg, {extraGuard, handoffVerification = false} = {}) {
+    const assertSendAllowed = captureSendGuard(key, { verification: handoffVerification });
     const safeMsg = redactKnownTokensOnly(msg);
     const [kind, id] = key.split(':');
     const parts = splitForQQ(safeMsg);
@@ -8667,13 +8678,23 @@ async function main() {
   }
 
   // 入队校验无法约束排队等待期间的权限变化，每条消息临近实际发送时再次校验。
-  function captureSendGuard(key) {
+  function captureSendGuard(key, { verification = false } = {}) {
+    engineHandoff.assertSendAllowed(key, { verification });
     if (!instanceIdentityAllowed()) throw new Error('机器人 QQ 身份尚未核验或不匹配');
     const identityGeneration = boundIdentity.generation;
     const roleEpoch = roleGeneration(key);
     const policy = sessionPolicy(key);
     const sessionId = state.sessions[key];
     return () => {
+      engineHandoff.assertSendAllowed(key, { verification });
+      // Ownership verification is a non-AI private control message and must work
+      // before a user obtains permission to chat. It still requires the same QQ
+      // instance and respects the explicit private deny list at actual dispatch.
+      if (verification) {
+        if (identityGeneration !== boundIdentity.generation || !instanceIdentityAllowed()
+            || (cfg.deny?.private ?? []).map(String).includes(key.split(':')[1])) throw new Error('QQ验证确认已取消：账号或权限已变化');
+        return;
+      }
       if (identityGeneration !== boundIdentity.generation || roleEpoch !== roleGeneration(key) || (sessionId && !personaContextAllowed(key, sessionId)) || !isSessionAllowedInCurrentMode(key) || policy !== sessionPolicy(key)
           || (sessionId && state.sessions[key] !== sessionId)) {
         throw new Error('发送已取消：会话、模式或白名单已变化');
@@ -9802,6 +9823,7 @@ async function main() {
 
   // 实际的 DSH prompt 投递（不再直接对外暴露，统一走 promptQueues 串行队列）。
   async function deliverPromptNow(key, promptText, opts = {}) {
+    engineHandoff.assertChatEnabled();
     const roleEpoch = opts.roleEpoch ?? roleGeneration(key);
     assertRoleGeneration(key, roleEpoch);
     if (!isSessionAllowedInCurrentMode(key)) throw new Error(`当前模式不允许会话 ${key}`);
@@ -10066,6 +10088,7 @@ async function main() {
   }
 
   function startSocialLoop() {
+    if (engineHandoff.managementOnly()) return;
     if (social.loopTimer) clearInterval(social.loopTimer);
     social.loopTimer = setInterval(socialLoopTick, 5000);
     social.loopTimer.unref?.();
@@ -10983,6 +11006,7 @@ async function main() {
   }
 
   async function sendWakePromptV2(key, reason) {
+    if (engineHandoff.managementOnly()) return;
     if(!budgetWakeAllowed(key,reason))return;
     if (cfg.socialV2?.enabled === false) return;
     if (currentMode !== 'reserved2' || socialV2.paused) return;
@@ -11201,6 +11225,7 @@ async function main() {
   }
 
   function scheduleWakeV2(key, reason) {
+    if (engineHandoff.managementOnly()) return;
     if (cfg.socialV2?.enabled === false) return;
     if (socialV2.paused) return;
     if (!isSessionAllowedInCurrentMode(key)) {
@@ -11288,6 +11313,7 @@ async function main() {
   }
 
   function setupSleepTimerV2(key) {
+    if (engineHandoff.managementOnly()) return;
     if (cfg.socialV2?.enabled === false) return;
     if (!isSessionAllowedInCurrentMode(key)) return;
     const st = getSocialV2State(key);
@@ -11335,6 +11361,7 @@ async function main() {
   }
 
   function scheduleProactiveCheckV2(key) {
+    if (engineHandoff.managementOnly()) return;
     if (cfg.socialV2?.proactive?.enabled === false) return;
     if (socialV2.paused || currentMode !== 'reserved2') return;
     if (!isSessionAllowedInCurrentMode(key)) return;
@@ -11428,11 +11455,12 @@ async function main() {
       const code=/^(?:绑定|\/bind)\s+([A-Za-z0-9_-]{12})$/.exec(bindingText);
       if(code) {
         if(String(event.user_id)!==String(id) || (cfg.deny?.private||[]).map(String).includes(String(id)))return;
-        try{tenantService.consumeBinding({qq:String(event.user_id),code:code[1]});await sendToQQ(key,'QQ验证绑定成功。现在可以回到用户空间选择人设、费用来源和查看消费。');}
-        catch(error){await sendToQQ(key,error.statusCode===503?'绑定服务暂不可用，请稍后再试。':'验证码无效、已失效或此QQ已绑定，请返回用户空间检查。');}
+        try{tenantService.consumeBinding({qq:String(event.user_id),code:code[1]});await sendToQQ(key,'QQ验证绑定成功。现在可以回到用户空间选择人设、费用来源和查看消费。',{handoffVerification:true});}
+        catch(error){await sendToQQ(key,error.statusCode===503?'绑定服务暂不可用，请稍后再试。':'验证码无效、已失效或此QQ已绑定，请返回用户空间检查。',{handoffVerification:true});}
         return;
       }
     }
+    if (engineHandoff.managementOnly()) return;
     if (!modeAllowed(key, kind, id, cfg, currentMode)) {
       log(`忽略未授权会话 ${key}（当前模式 ${currentMode}，来自 ${event.user_id}）`);
       return;
@@ -11889,6 +11917,7 @@ async function main() {
 
   // 二代拍一拍（notify/poke）事件处理：写入消息流并按需唤醒。
   async function handlePokeNotice(event) {
+    if (engineHandoff.managementOnly()) return;
     if (!event || event.sub_type !== 'poke' || !instanceIdentityAllowed(event) || isKnownBotEvent(event)) return;
     const selfId = event.self_id;
     const groupId = event.group_id ?? event.groupId ?? null;
@@ -12705,11 +12734,18 @@ async function main() {
   if (cfg.socialV2?.sticker?.enabled !== false) {
     syncStickerLibrary(true).catch((error) => log('启动预热表情库失败:', error?.message ?? error));
   }
+  if (engineHandoff.managementOnly()) {
+    const knownIds = [...Object.values(state.sessions), ...learnerSessions,
+      ...Object.values(conversationSessions.read().records).map(row => row.sessionId)];
+    engineHandoffStatus = await engineHandoff.stopLegacyWork(knownIds,
+      id => withTimeout(api.stopSessionWork(id), DSH_CONTROL_TIMEOUT_MS, 'engine handoff stop'));
+    log(`聊天引擎已移交：旧实例仅保留账号、QQ验证和只读管理；已停止 ${engineHandoffStatus.stopped} 个旧会话，${engineHandoffStatus.failed} 个停止待核验`);
+  }
   startDshWatch();
   startSnowlumaWatch();
   startConsoleServer();
 
-  await pumpMux();
+  if (!engineHandoff.managementOnly()) await pumpMux();
 }
 
 process.on('SIGINT', () => {

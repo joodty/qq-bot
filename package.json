@@ -10,6 +10,7 @@
   },
   "scripts": {
     "test:core": "node scripts/test-core.mjs",
+    "test:engine-handoff": "node scripts/test-engine-handoff.mjs",
     "check:public": "node scripts/check-publication.mjs",
     "test:group-roles": "node scripts/test-group-roles.mjs",
     "test:conversation-roles": "node scripts/test-conversation-roles.mjs && node scripts/test-conversation-role-races.mjs",

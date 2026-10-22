@@ -39,6 +39,7 @@ import * as botOnboarding from '../src/bot-onboarding.js';
 import * as hostedLogin from '../src/hosted-login-client.js';
 import * as tenantRuntime from '../src/tenant-runtime.js';
 import * as trialBudget from '../src/trial-budget.js';
+import * as engineHandoff from '../src/engine-handoff.js';
 import { unwrap, createTurnCollector } from '../src/dsh-client.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -186,7 +187,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     SnowLumaWebSocketClient: FakeBot, text: (s) => s,
     discoverDshLaunchToken: () => '', unwrap, createTurnCollector,
     ...markdown, ...sensitive, ...wait, ...safeFetch, ...forward, ...slang, ...sticker,
-    ...modelPrices, ...tokenLedger, ...consoleAuth, ...voiceLib, ...stateAcl, ...presetPrompt, ...groupRoles, ...conversationRoles, ...conversationSessions, ...roleCard, ...sqliteState, ...runtimePaths, ...botManager, ...memberPersonas, ...managementRouter, ...instanceIdentity, ...groupBudget, ...budgetController, ...tenantService, ...tenantRouter, ...botOnboarding, ...hostedLogin, ...tenantRuntime, ...trialBudget,
+    ...modelPrices, ...tokenLedger, ...consoleAuth, ...voiceLib, ...stateAcl, ...presetPrompt, ...groupRoles, ...conversationRoles, ...conversationSessions, ...roleCard, ...sqliteState, ...runtimePaths, ...botManager, ...memberPersonas, ...managementRouter, ...instanceIdentity, ...groupBudget, ...budgetController, ...tenantService, ...tenantRouter, ...botOnboarding, ...hostedLogin, ...tenantRuntime, ...trialBudget, ...engineHandoff,
     getRuntimePaths: options => runtimePaths.getRuntimePaths({ ...options,
       ...(config.managerWorker ? { codeRoot:path.join(temp,'shared-code'), env:{...env,QQ_BRIDGE_RUNTIME_ROOT:temp,QQ_BRIDGE_BOT_ID:config.botId,QQ_BRIDGE_EXPECTED_QQ:config.expectedQQ} } : {}) }),
     // ACL 收紧会 spawn icacls 去改**真实**文件系统；测试不该做这件事（同理见下面的
