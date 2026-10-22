@@ -1831,15 +1831,15 @@ button:active:not(:disabled) {
   <div class="workspace">
     <header class="topbar">
       <div class="breadcrumb">工作空间<span>/</span><span id="breadcrumbPage">运行总览</span></div>
-      <div class="topbar-actions"><label for="consoleBotSelect" class="sr-only">当前机器人</label><select id="consoleBotSelect" aria-label="当前机器人" style="max-width:180px;width:auto"><option value="primary">主机器人</option></select><a id="platformBotsLink" href="/bots" class="meta">机器人管理</a><a href="/workspace" class="meta">我的空间</a><a href="/viewer" class="meta">成员人设</a><span id="accountIdentity" class="account-identity">管理控制台</span><button id="accountLogout" class="small" hidden>退出登录</button><span class="status-badge" id="statusText" role="status">正在连接…</span><button id="themeToggle" class="icon-button" type="button" aria-label="切换深色模式" aria-pressed="false" title="切换深色 / 浅色主题">☾</button><button id="refreshConsole" class="icon-button" aria-label="刷新控制台状态" title="刷新状态">↻</button></div>
+      <div class="topbar-actions"><label for="consoleBotSelect" class="sr-only">当前机器人</label><select id="consoleBotSelect" aria-label="当前机器人" style="max-width:180px;width:auto"><option value="primary">主机器人</option></select><a id="platformBotsLink" href="/bots" class="meta">机器人管理</a><a href="/workspace#home" class="meta">返回我的主页</a><a id="consoleChatLink" href="/viewer" class="meta">聊天与人设</a><span id="accountIdentity" class="account-identity">管理控制台</span><button id="accountLogout" class="small" hidden>退出登录</button><span class="status-badge" id="statusText" role="status">正在连接…</span><button id="themeToggle" class="icon-button" type="button" aria-label="切换深色模式" aria-pressed="false" title="切换深色 / 浅色主题">☾</button><button id="refreshConsole" class="icon-button" aria-label="刷新控制台状态" title="刷新状态">↻</button></div>
     </header>
     <main id="mainContent" tabindex="-1">
-      <div class="page-heading"><div><div class="eyebrow">QQ BRIDGE / CONSOLE</div><h1 id="pageTitle">让每一次连接，都自然发生。</h1><p id="pageDescription">掌握桥接状态，轻松管理你的 QQ 智能伙伴。</p></div>
+      <div class="page-heading"><div><div class="eyebrow">QQ BRIDGE / CONSOLE</div><h1 id="pageTitle">机器人运行概况</h1><p id="pageDescription">查看机器人是否在线、当前聊天模式和今日用量。</p></div>
         <div class="search-wrap"><label class="sr-only" for="consoleSearch">搜索功能或参数</label><input id="consoleSearch" type="search" placeholder="搜索功能或参数…" autocomplete="off" aria-controls="searchResults" aria-expanded="false"><div id="searchResults" class="search-results" hidden></div></div>
       </div>
       <div id="connectionAlert" class="connection-alert" role="alert" hidden></div>
       <div id="accountSetupBanner" class="connection-alert" hidden>平台尚未初始化，请联系平台管理员完成初始化。</div>
-      <div id="ownedBotNotice" class="connection-alert" hidden>你正在管理自己的机器人。账号、平台补贴、机器令牌和服务器运维由平台管理；模型 Key 与成员授权请到“我的空间”管理。</div>
+      <div id="ownedBotNotice" class="connection-alert" hidden>这里设置的是你选中的这台机器人。人设、费用、允许聊天的群都只对它生效。自己的 API 和群聊分享请到“我的主页”管理。</div>
       <div id="overviewSummary" class="overview-summary span-all" data-page="overview">
         <div class="metric"><span>DSH 连接</span><strong id="metricDsh">连接中</strong><small id="metricDshHint">等待服务响应</small></div>
         <div class="metric"><span>SnowLuma 上游</span><strong id="metricSnowluma">读取中</strong><small id="metricSnowlumaHint">等待网关健康上报</small></div>
@@ -2579,7 +2579,7 @@ button:active:not(:disabled) {
       </div>
     </section>
 <section id="section-platform-space" data-page="access" class="card span-all">
-      <h2>平台与个人空间</h2><p class="meta">平台管理员在这里管理账号和跨机器人设置；体验、自带 Key、托管自有机器人的用户空间分别保持资源与费用边界。</p><div class="row" style="margin-top:12px"><a href="/workspace">进入我的空间与体验额度设置</a><a href="/permissions">查看空间与权限关系图</a></div>
+      <h2>平台与个人空间</h2><p class="meta">平台管理员在这里管理账号和跨机器人设置；体验、自带 Key、托管自有机器人的用户空间分别保持资源与费用边界。</p><div class="row" style="margin-top:12px"><a href="/workspace">个人主页与平台额度设置</a><a href="/permissions">使用帮助</a></div>
     </section>
 <section id="section-accounts" data-page="access" class="card span-all">
       <h2>账号与登录</h2>
@@ -4765,6 +4765,7 @@ function applyOwnedBotControls() {
   for (const id of ['v2InitPromptKey', 'v2ToolLogOutput']) { const section = document.getElementById(id)?.closest('details'); if (section) { section.dataset.ownerForbidden = 'true'; section.querySelectorAll('input,textarea,button').forEach(input => { input.disabled = true; }); } }
   const prompt = document.getElementById('simPromptText'); if (prompt) { const section = prompt.closest('section'); if (section && section.id !== 'section-persona') section.dataset.ownerForbidden = 'true'; else { for (const id of ['simPromptPreset','simPromptText','simPromptEdit','simPromptSave','simPromptRestore','simPromptCancel','simPromptWarnings','simPromptRestart']) { const el = document.getElementById(id); if (el) { el.dataset.ownerForbidden = 'true'; if ('disabled' in el) el.disabled = true; } } } }
   document.getElementById('ownedBotNotice').hidden = false;
+  document.getElementById('consoleChatLink').href = '/viewer?bot=' + encodeURIComponent(consoleBotId);
   if (['operations', 'reference', 'social-v1', 'slang'].includes(currentConsolePage)) setConsolePage('overview');
 }
 document.getElementById('accountsRefresh').addEventListener('click', loadAccountState);
@@ -4808,14 +4809,14 @@ document.getElementById('consoleBotSelect').addEventListener('change', event => 
 
 // Presentation layer: keep every existing control mounted so drafts and API contracts survive navigation.
 const consolePages = {
-  overview: ['运行总览', '让每一次连接，都自然发生。', '掌握桥接状态，轻松管理你的 QQ 智能伙伴。'],
-  sessions: ['会话与审批', '让每一段对话，都有迹可循。', '查看 QQ 与 DSH 的会话映射，以及等待你回复的审批和提问。'],
-  persona: ['人格与角色', '给你的伙伴，一点独特个性。', '选择已有角色，或用自己的语言写下新的性格与表达方式。'],
+  overview: ['运行总览', '机器人运行概况', '查看机器人是否在线、当前聊天模式和今日用量。'],
+  sessions: ['会话与审批', '聊天会话与待处理事项', '查看 QQ 与 DSH 的会话映射，以及等待你回复的审批和提问。'],
+  persona: ['人格与角色', '给群聊和私聊选择人设', '选择已有角色，或用自己的语言写下新的性格与表达方式。'],
   'social-v2': ['二代仿真', '自主参与，恰到好处。', '管理 AI 的工具、唤醒与发言节奏。展开需要调整的分组，修改后保存参数。'],
   'social-v1': ['一代仿真', '为自然对话，设定合适的节奏。', '调整参与概率、活跃周期和分条发送；所有配置项完整保留。'],
   slang: ['黑话词库', '读懂群聊里的，言外之意。', '从候选到确认，让 AI 逐渐熟悉大家的表达习惯。'],
-  usage: ['用量与费用', '每一次思考，都算得清楚。', '实时查看 AI 的 token 消耗与花费，可下钻到每个群、每个好友、每一轮对话。'],
-  access: ['访问与安全', '明确边界，安心连接。', '管理允许对话的对象、管理员权限与控制台访问凭证。'],
+  usage: ['用量与费用', '费用与每日额度', '实时查看 AI 的 token 消耗与花费，可下钻到每个群、每个好友、每一轮对话。'],
+  access: ['访问与安全', '允许哪些群和好友聊天', '管理允许对话的对象、管理员权限与控制台访问凭证。'],
   operations: ['调试与运维', '让桥接，始终井然有序。', '测试消息、引导 AI，或维护桥接进程与会话工作区。'],
   reference: ['工具参考', '每一种能力，都清晰可见。', '查看桥接提供给 DSH 的 MCP 工具与用途。']
 };

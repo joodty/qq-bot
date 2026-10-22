@@ -88,7 +88,7 @@ try {
     await userPage.locator('#workspaceIdentity').filter({ hasText: 'viewer' }).waitFor();
     assert.equal(new URL(userPage.url()).pathname, '/workspace');
     await userPage.reload(); await userPage.locator('#workspaceIdentity').filter({ hasText: 'viewer' }).waitFor();
-    await userPage.getByRole('link', { name: '已授权会话人设' }).click();
+    await userPage.getByRole('link', { name: '聊天与人设', exact:true }).click();
     await userPage.locator('#viewerIdentity').filter({ hasText: 'viewer' }).waitFor();
     assert.equal(await userPage.locator('#mainNav').count(), 0);
   });
