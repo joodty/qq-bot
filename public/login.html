@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>登录 · QQ Bridge</title>
+<style>
+:root{color-scheme:light;--bg:#f6f8fc;--card:#fff;--text:#202635;--muted:#697386;--line:#dfe5ee;--accent:#5268ec;--error:#b52239;--soft:#eef2ff}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 system-ui,"Microsoft YaHei",sans-serif;min-height:100vh;display:grid;place-items:center;padding:24px}main{width:min(100%,440px)}.brand{font-size:15px;letter-spacing:.04em;font-weight:700;color:var(--accent);margin-bottom:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px;box-shadow:0 16px 60px #263e7110}h1{font-size:27px;line-height:1.3;margin:0 0 10px}p{margin:0 0 20px;color:var(--muted)}label{display:block;font-size:13px;font-weight:600;margin:16px 0 6px}input{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;min-width:0}input:focus{outline:2px solid var(--accent);outline-offset:2px}button{font:inherit;cursor:pointer;border-radius:10px;padding:11px 16px;border:0;background:var(--accent);color:#fff;width:100%;margin-top:22px;font-weight:600}button:disabled{opacity:.6;cursor:wait}.note{font-size:12px;color:var(--muted);margin-top:14px}.callout{border-radius:10px;padding:12px;background:var(--soft);color:var(--text);font-size:13px;margin-bottom:18px}.message{font-size:13px;min-height:1.7em;margin-top:14px;overflow-wrap:anywhere}.message.error{color:var(--error)}.message.success{color:#19754f}[hidden]{display:none!important}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:20px}a{color:var(--accent)}@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#111622;--card:#1b2232;--text:#e9edf7;--muted:#a8b3c7;--line:#354158;--accent:#9caaff;--error:#ff9bad;--soft:#27314e}button{color:#131a30}}@media(max-width:420px){body{padding:16px}.card{padding:24px}}
+</style>
+<style>.login-tabs{display:flex;gap:8px;margin-bottom:22px}.login-tabs button{margin:0;background:var(--soft);color:var(--text);border:1px solid var(--line);padding:9px 12px}.login-tabs button[aria-selected=true]{background:var(--accent);color:#fff;border-color:var(--accent)}@media(prefers-color-scheme:dark){.login-tabs button[aria-selected=true]{color:#131a30}}</style>
+</head>
+<body>
+<main>
+  <div class="brand">QQ BRIDGE / CONSOLE</div>
+  <section class="card" aria-labelledby="loginTitle">
+    <div id="loginTabs" class="login-tabs" role="tablist" aria-label="账号登录或注册"><button id="loginTab" type="button" role="tab" aria-selected="true" aria-controls="loginForm">登录</button><button id="registerTab" type="button" role="tab" aria-selected="false" aria-controls="loginForm" hidden>注册普通账号</button></div>
+    <h1 id="loginTitle">账号登录</h1>
+    <p id="loginIntro">用账号密码登录，继续管理你的聊天伙伴。</p>
+    <div id="setupNotice" class="callout" hidden>平台尚未初始化，请联系平台管理员完成初始化。</div>
+    <form id="loginForm">
+      <label for="username">账号</label>
+      <input id="username" name="username" autocomplete="username" required minlength="3" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" autocapitalize="none" spellcheck="false">
+      <label for="password">密码</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128">
+      <div id="registerFields" hidden>
+        <label for="passwordConfirm">确认密码</label>
+        <input id="passwordConfirm" type="password" autocomplete="new-password" maxlength="128">
+        <div class="note">密码需 10—128 个字符。新注册的是普通账号；登录后可在“我的空间”验证自己的 QQ 并设置费用来源。</div>
+      </div>
+      <button id="loginSubmit" type="submit" disabled>正在检查登录状态…</button>
+      <div id="loginMessage" class="message" role="status" aria-live="polite"></div>
+    </form>
+    <div class="note" id="loginRemember">登录状态可在这台浏览器保留 30 天，刷新页面无需重复输入。公用设备使用后请退出登录。</div>
+    <div id="registrationNotice" class="note" hidden>普通账号注册暂未开放，请联系平台管理员。</div>
+  </section>
+  <div class="footer">平台管理员管理默认配置 · 普通账号管理自己的资源<br><a href="/data-model">模型与数据 · 公开说明</a></div>
+</main>
+<script>
+let registration = false, ready = false, registrationEnabled = false;
+try { localStorage.removeItem('consoleToken'); } catch {}
+const message = document.getElementById('loginMessage');
+const submit = document.getElementById('loginSubmit');
+if (location.search) history.replaceState({}, '', location.pathname);
+function showMessage(text, error) { message.textContent = text; message.className = 'message ' + (error ? 'error' : 'success'); }
+async function request(route, body) {
+  const headers = body === undefined ? {} : { 'content-type': 'application/json' };
+  const response = await fetch(route, { method: body === undefined ? 'GET' : 'POST', headers, credentials: 'same-origin', ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+  let data;
+  try { data = await response.json(); } catch { throw new Error('服务暂时不可用，请稍后重试'); }
+  if (!response.ok || !data.ok) throw new Error(data.error || '请求失败，请重试');
+  return data;
+}
+function destination(user) { return user && user.role === 'user' ? '/workspace' : '/'; }
+function setRegistration(value) {
+  if (!ready || (value && !registrationEnabled)) return;
+  registration = value;
+  document.getElementById('loginTab').setAttribute('aria-selected', String(!value));
+  document.getElementById('registerTab').setAttribute('aria-selected', String(value));
+  document.getElementById('loginTab').tabIndex = value ? -1 : 0;
+  document.getElementById('registerTab').tabIndex = value ? 0 : -1;
+  document.getElementById('registerFields').hidden = !value;
+  document.getElementById('passwordConfirm').required = value;
+  document.getElementById('passwordConfirm').minLength = value ? 10 : 0;
+  document.getElementById('password').minLength = value ? 10 : 1;
+  document.getElementById('password').autocomplete = value ? 'new-password' : 'current-password';
+  document.getElementById('password').value = ''; document.getElementById('passwordConfirm').value = '';
+  document.getElementById('loginTitle').textContent = value ? '注册普通账号' : '账号登录';
+  document.getElementById('loginIntro').textContent = value ? '创建自己的账号，进入专属空间。' : '用账号密码登录，继续管理你的聊天伙伴。';
+  submit.textContent = value ? '注册并进入我的空间' : '登录'; showMessage('', false);
+}
+async function init() {
+  try {
+    const status = await request('/api/auth/status');
+    if (status.authenticated && status.user) { location.replace(destination(status.user)); return; }
+    ready = status.configured === true; registrationEnabled = ready && status.registrationEnabled === true;
+    document.getElementById('setupNotice').hidden = ready;
+    document.getElementById('loginForm').hidden = !ready; document.getElementById('loginTabs').hidden = !ready;
+    document.getElementById('registerTab').hidden = !registrationEnabled;
+    document.getElementById('registrationNotice').hidden = !ready || registrationEnabled;
+    document.getElementById('loginRemember').hidden = !ready;
+    if (!ready) { document.getElementById('loginTitle').textContent = '平台尚未初始化'; document.getElementById('loginIntro').textContent = '平台初始化完成后，即可使用账号密码登录。'; return; }
+    setRegistration(false); submit.disabled = false;
+  } catch (error) { showMessage(error.message, true); submit.textContent = '刷新后重试'; }
+}
+document.getElementById('loginForm').addEventListener('submit', async event => {
+  event.preventDefault(); submit.disabled = true; showMessage('', false);
+  try {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    if (!ready || (registration && !registrationEnabled)) throw new Error('当前无法注册或登录，请刷新后重试');
+    if (registration && password !== document.getElementById('passwordConfirm').value) throw new Error('两次输入的密码不一致');
+    const data = await request(registration ? '/api/auth/register' : '/api/auth/login', { username, password });
+    document.getElementById('password').value = ''; document.getElementById('passwordConfirm').value = '';
+    showMessage('登录成功，正在打开…', false);
+    location.replace(destination(data.user || { role: registration ? 'user' : 'admin' }));
+  } catch (error) { showMessage(error.message, true); submit.disabled = false; }
+});
+document.getElementById('loginTab').addEventListener('click', () => setRegistration(false));
+document.getElementById('registerTab').addEventListener('click', () => setRegistration(true));
+document.getElementById('loginTabs').addEventListener('keydown', event => { if (!registrationEnabled || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return; event.preventDefault(); setRegistration(event.key === 'Home' ? false : event.key === 'End' ? true : !registration); document.getElementById(registration ? 'registerTab' : 'loginTab').focus(); });
+init();
+</script>
+</body>
+</html>

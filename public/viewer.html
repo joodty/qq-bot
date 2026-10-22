@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark">
+<title>我的机器人 · QQ Bridge</title>
+<style>
+:root{color-scheme:light;--bg:#f6f8fc;--card:#fff;--text:#202635;--muted:#697386;--line:#dfe5ee;--accent:#5268ec;--error:#b52239;--soft:#eef2ff}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.65 system-ui,"Microsoft YaHei",sans-serif}main{width:min(1120px,100%);margin:0 auto;padding:30px 24px}header,.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}header{justify-content:space-between;margin-bottom:24px}.brand{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.06em}h1{font-size:27px;margin:4px 0}h2{font-size:18px;margin:0 0 12px}h3{font-size:14px;margin:18px 0 6px}p{margin:0;color:var(--muted)}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin:18px 0}.meta{font-size:12px;color:var(--muted)}button,input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:var(--card);color:var(--text);max-width:100%}button{cursor:pointer;white-space:nowrap}button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}button:disabled{opacity:.5;cursor:default}input,select,textarea{min-width:0;width:100%}textarea{min-height:210px;resize:vertical;line-height:1.65}label{display:block;font-size:12px;margin:12px 0 5px}.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.editor-grid{display:grid;grid-template-columns:minmax(180px,1fr) minmax(0,2fr);gap:24px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:12px 10px;border-bottom:1px solid var(--line);font-size:13px;overflow-wrap:anywhere}th{font-size:12px;color:var(--muted)}.empty{padding:28px 0;color:var(--muted)}.message{min-height:1.7em;margin-top:12px;overflow-wrap:anywhere}.error{color:var(--error)}.success{color:#19754f}.connection{display:flex;gap:20px;flex-wrap:wrap;margin-top:10px}.connection strong{font-size:14px}summary{cursor:pointer}.note{background:var(--soft);padding:10px 12px;border-radius:9px;margin:12px 0;color:var(--muted);font-size:12px}.wide-select{width:min(100%,330px)}a{color:var(--accent)}[hidden]{display:none!important}input:focus,select:focus,textarea:focus,button:focus{outline:2px solid var(--accent);outline-offset:2px}@media(max-width:700px){main{padding:20px 16px}.card{padding:18px}.fields,.editor-grid{grid-template-columns:1fr}.editor-grid{gap:12px}th,td{min-width:80px}.table-wrap table{min-width:550px}}@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#111622;--card:#1b2232;--text:#e9edf7;--muted:#a8b3c7;--line:#354158;--accent:#9caaff;--error:#ff9bad;--soft:#27314e}button.primary{color:#131a30}}
+</style>
+</head><body><main>
+<header><div><div class="brand">QQ BRIDGE / MY PERSONAS</div><h1>已授权会话人设</h1><p>在获授权的群或私聊中，管理你的人设。</p></div><div class="row"><span id="viewerIdentity" class="meta">读取账号…</span><a href="/workspace">我的空间</a><a id="viewerAdminLink" href="/" hidden>管理控制台</a><button id="viewerLogout">退出登录</button></div></header>
+<section class="card"><div class="row"><label for="viewerBotSelect" style="margin:0">当前机器人</label><select id="viewerBotSelect" class="wide-select" disabled></select><button id="viewerRefresh">刷新</button></div><div class="connection"><span>模型连接：<strong id="viewerDsh">—</strong></span><span>QQ 在线：<strong id="viewerQq">—</strong></span></div><div id="viewerBotMessage" class="message meta" role="status"></div></section>
+<section class="card"><h2>已分配的会话与费用</h2><p id="viewerRange" class="meta">金额按当前价目表估算，不是供应商实际账单。</p><div id="viewerConversations" class="table-wrap" tabindex="0" aria-label="会话概况表，窄屏可横向滚动查看费用"></div><div class="meta">窄屏可左右滑动表格查看费用。</div><div id="viewerMessage" class="message meta" role="status"></div></section>
+<section class="card" id="memberPersonaPanel"><h2>我的人设</h2><p class="meta">你可以创建、编辑自己的角色卡，或复制管理员模板。保存角色正文与应用到会话是两个操作。</p>
+<div class="editor-grid"><div><label for="memberPersonaSelect">角色卡或模板</label><select id="memberPersonaSelect"><option value="">新建角色卡</option></select><div class="row" style="margin-top:12px"><button id="memberNew">新建</button><button id="memberCopy">复制当前卡</button></div><div id="memberPersonaInfo" class="note">选择角色卡，或从空白开始。</div><label for="memberApplyKey">应用到已授权对象</label><select id="memberApplyKey"></select><button id="memberApply" class="primary" style="margin-top:12px" disabled>应用已保存的人设</button><div class="meta" style="margin-top:10px">应用会切换该对象的人设；不会自动发送消息或唤醒模型。</div></div>
+<div><form id="memberPersonaForm"><label for="memberName">人设名称</label><input id="memberName" maxlength="80" required placeholder="例如：我的咸鱼同桌"><label for="memberContent">人设正文</label><textarea id="memberContent" required placeholder="性格、说话方式、互动习惯和对话示例……"></textarea><div id="memberImpact" class="note">新角色卡保存后不会自动应用到会话。</div><div class="row"><button id="memberSave" class="primary">保存角色卡</button><button id="memberReload" type="button" disabled>重新载入已保存版本</button><span id="memberVersion" class="meta"></span></div></form>
+<details id="memberHistoryPanel" style="margin-top:18px" hidden><summary>历史版本与恢复</summary><label for="memberHistorySelect">选择历史版本</label><select id="memberHistorySelect"></select><textarea id="memberHistoryPreview" readonly aria-label="历史版本正文" style="min-height:130px;margin-top:10px"></textarea><button id="memberRestore" style="margin-top:10px" disabled>恢复为一个新版本</button><div class="meta">恢复会保留已有历史，并追加一个新版本。</div></details></div></div><div id="memberMessage" class="message meta" role="status" aria-live="polite"></div></section>
+<details class="card"><summary>修改我的密码</summary><form id="viewerPasswordForm"><div class="fields"><div><label for="viewerCurrentPassword">当前密码</label><input id="viewerCurrentPassword" type="password" autocomplete="current-password" required maxlength="128"></div><div><label for="viewerNewPassword">新密码</label><input id="viewerNewPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></div><div><label for="viewerConfirmPassword">确认新密码</label><input id="viewerConfirmPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></div></div><div class="row" style="margin-top:14px"><button id="viewerPasswordSave" class="primary">修改并重新登录</button><span class="meta">修改后，此账号在所有浏览器的登录状态都会失效。</span></div><div id="viewerPasswordMessage" class="message meta" role="status"></div></form></details>
+</main><script>
+const $ = id => document.getElementById(id);
+let currentBot = 'primary', bots = [], personas = [], templates = [], selected = '', loadedVersion = null, draftDirty = false, history = [], conversationKeys = [], refreshId = 0, busy = false;
+const ownerNames = new Map();
+async function api(route, body) {
+  const response = await fetch(route, { method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', ...(body === undefined ? {} : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }) });
+  if (response.status === 401) { location.replace('/login'); throw new Error('登录已过期，请重新登录'); }
+  let data; try { data = await response.json(); } catch { throw new Error('服务暂不可用，请稍后重试'); }
+  if (!response.ok || !data.ok) throw new Error(data.error || '操作失败'); return data;
+}
+function memberRoute(route, bot = currentBot) { return bot === 'primary' ? '/api/member/' + route : '/api/bots/' + encodeURIComponent(bot) + '/member/' + route; }
+function message(text, error) { $('memberMessage').textContent = text; $('memberMessage').className = 'message ' + (error ? 'error' : 'success'); }
+function cell(tag, value) { const el = document.createElement(tag); el.textContent = String(value ?? '—'); return el; }
+function memberBudgetSummary(row) {
+  const budget = row.budget; if (!budget) return '未提供额度状态';
+  const names = { normal: '正常', degraded: '节流：简短输出与降频', throttled: '节流：简短输出与降频', exhausted: '暂停新调用，次日恢复', unsupported: '计价不支持，暂停新调用', disabled: '额度限制未启用' };
+  const money = value => value !== null && value !== undefined && Number.isFinite(Number(value)) ? '¥' + Number(value).toFixed(4) : '—';
+  return (names[budget.state] || '状态未知') + '\n已估算 ' + money(budget.spentCny ?? budget.spent) + ' · 在途预留 ' + money(budget.reservedCny ?? budget.reserved) + '\n剩余 ' + money(budget.remainingCny ?? budget.remaining) + ' / 今日 ' + money(budget.dailyLimitCny ?? budget.limit);
+}
+function card() { return selected.startsWith('own:') ? personas.find(row => row.id === selected.slice(4)) : null; }
+function confirmDraft() { return !draftDirty || confirm('当前有未保存修改，继续将放弃这些修改。'); }
+function buttons() { $('memberSave').disabled = busy || !conversationKeys.length || selected === 'inherit'; $('memberReload').disabled = busy || !card(); $('memberApply').disabled = busy || draftDirty || !selected || !conversationKeys.length; $('memberRestore').disabled = busy || !card() || !history.length; $('memberCopy').disabled = busy || !selected || selected === 'inherit'; $('memberNew').disabled = busy; }
+function clearEditor() { selected = ''; loadedVersion = null; draftDirty = false; history = []; $('memberPersonaSelect').value = ''; $('memberPersonaForm').reset(); $('memberName').disabled = false; $('memberContent').disabled = false; $('memberVersion').textContent = ''; $('memberPersonaInfo').textContent = '新角色卡归当前账号所有。'; $('memberImpact').textContent = '新角色卡保存后不会自动应用到会话。'; $('memberHistoryPanel').hidden = true; buttons(); }
+function impactText(target) { const keys = target?.affectedConversations || []; return keys.length ? '当前使用这张卡的授权对象：' + keys.join('、') + '。保存正文会更新这些对象使用的角色内容。' : '当前没有授权对象使用这张卡。保存后可单独应用到会话。'; }
+async function loadHistory() {
+  const own = card(), bot = currentBot; history = []; $('memberHistoryPanel').hidden = !own;
+  if (!own) return;
+  try { const data = await api(memberRoute('personas/history?id=' + encodeURIComponent(own.id), bot)); if (bot !== currentBot || card()?.id !== own.id) return; history = data.history || []; $('memberHistorySelect').replaceChildren(); for (const row of [...history].reverse()) $('memberHistorySelect').add(new Option('版本 ' + row.version + ' · ' + new Date(row.createdAt).toLocaleString('zh-CN'), String(row.version))); renderHistory(); buttons(); }
+  catch (error) { message('历史读取失败：' + error.message, true); }
+}
+function renderHistory() { const row = history.find(row => String(row.version) === $('memberHistorySelect').value); $('memberHistoryPreview').value = row ? row.name + '\n\n' + row.content : ''; }
+function selectPersona(value) {
+  selected = value; draftDirty = false; history = []; const own = card(), template = value.startsWith('template:') ? templates.find(row => row.name === value.slice(9)) : null;
+  $('memberName').disabled = value === 'inherit'; $('memberContent').disabled = value === 'inherit';
+  loadedVersion = own?.version ?? null; $('memberName').value = own?.name || (template ? template.name + ' 副本' : ''); $('memberContent').value = own?.content || template?.content || '';
+  $('memberVersion').textContent = own ? '已保存版本 ' + own.version : template ? '保存将创建你的独立副本' : '';
+  $('memberPersonaInfo').textContent = own ? '这是你可管理的独立角色卡。' + (own.ownerUserId ? ' 所属账号：' + (ownerNames.get(own.ownerUserId) || own.ownerUserId.slice(0, 8)) : '') : template ? '管理员模板仅供使用或复制，不能修改原模板。' : '新角色卡归当前账号所有。';
+  $('memberImpact').textContent = value === 'inherit' ? '点击应用，即可让所选对象重新跟随管理员设置的全局人设。' : own ? impactText(own) : '保存副本不会修改模板，也不会自动应用到会话。'; $('memberHistoryPanel').hidden = !own; buttons(); if (own) loadHistory();
+}
+async function loadPersonas(keepSelection = true, bot = currentBot) {
+  const data = await api(memberRoute('personas', bot)); if (bot !== currentBot) return;
+  personas = data.personas || []; templates = data.templates || []; const previous = keepSelection ? selected : '';
+  $('memberPersonaSelect').replaceChildren(new Option('新建角色卡', ''), new Option('沿用全局人设', 'inherit'));
+  const ownGroup = document.createElement('optgroup'); ownGroup.label = '可管理的独立角色卡'; for (const row of personas) ownGroup.appendChild(new Option(row.name + ' · v' + row.version + (row.ownerUserId ? ' · ' + (ownerNames.get(row.ownerUserId) || row.ownerUserId.slice(0, 8)) : ''), 'own:' + row.id));
+  const templateGroup = document.createElement('optgroup'); templateGroup.label = '管理员模板'; for (const row of templates) templateGroup.appendChild(new Option(row.name, 'template:' + row.name));
+  $('memberPersonaSelect').append(ownGroup, templateGroup);
+  $('memberPersonaSelect').value = [...$('memberPersonaSelect').options].some(option => option.value === previous) ? previous : '';
+  selectPersona($('memberPersonaSelect').value);
+}
+async function refresh() {
+  const request = ++refreshId, bot = currentBot; $('viewerMessage').textContent = '正在读取…'; $('viewerMessage').className = 'message meta';
+  try {
+    const data = await api(memberRoute('overview', bot)); if (request !== refreshId || bot !== currentBot) return;
+    $('viewerDsh').textContent = data.status?.dshReady ? '已连接' : '未连接'; $('viewerQq').textContent = data.status?.qqOnline ? '在线' : '离线';
+    $('viewerRange').textContent = (data.from && data.to ? data.from + ' 至 ' + data.to + ' · 北京时间。' : '') + '费用按当前价目表估算，不是供应商实际账单。';
+    const box = $('viewerConversations'); box.replaceChildren(); const rows = data.conversations || []; conversationKeys = rows.map(row => row.key);
+    const previous = $('memberApplyKey').value; $('memberApplyKey').replaceChildren(); for (const row of rows) $('memberApplyKey').add(new Option(row.label || row.key, row.key)); if (conversationKeys.includes(previous)) $('memberApplyKey').value = previous;
+    if (!rows.length) { const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = '管理员尚未为此账号分配可管理的会话。'; box.appendChild(empty); }
+    else { const table = document.createElement('table'), head = document.createElement('thead'), heading = document.createElement('tr'), body = document.createElement('tbody'); for (const title of ['对象', '当前人设', '会话数量', '今日额度状态（含预留）', '期间估算费用', '期间 token']) heading.appendChild(cell('th', title)); head.appendChild(heading); for (const row of rows) { const tr = document.createElement('tr'); tr.dataset.key = row.key; const cost = Number(row.estimatedCost); for (const value of [row.label || row.key, row.role || '无角色', row.sessionCount ?? 0, memberBudgetSummary(row), (data.symbol || '¥') + (Number.isFinite(cost) ? cost.toFixed(4) : '—'), Number(row.tokens || 0).toLocaleString('zh-CN')]) { const td = cell('td', value); td.style.whiteSpace = 'pre-line'; tr.appendChild(td); } body.appendChild(tr); } table.append(head, body); box.appendChild(table); }
+    $('viewerMessage').textContent = '概况已更新。群与私聊按北京时间各自计算每日额度；额度为估算，达到上限只暂停新调用，已运行的请求仍可能产生费用。额度设置由管理员管理。'; buttons();
+  } catch (error) { if (request !== refreshId || bot !== currentBot) return; conversationKeys = []; buttons(); $('viewerMessage').textContent = error.message; $('viewerMessage').className = 'message error'; }
+}
+async function refreshAll() { await refresh(); if (conversationKeys.length && !draftDirty) { try { await loadPersonas(); } catch (error) { message(error.message, true); } } }
+$('viewerRefresh').addEventListener('click', refreshAll);
+$('memberPersonaSelect').addEventListener('change', event => { if (!confirmDraft()) { event.target.value = selected; return; } selectPersona(event.target.value); message('', false); });
+$('memberNew').addEventListener('click', () => { if (confirmDraft()) clearEditor(); });
+$('memberReload').addEventListener('click', async () => { if (!busy && confirmDraft()) { try { draftDirty = false; await loadPersonas(); message('已载入服务端最新保存版本。', false); } catch (error) { message(error.message, true); } } });
+$('memberCopy').addEventListener('click', () => { const name = $('memberName').value, content = $('memberContent').value; selected = ''; loadedVersion = null; $('memberPersonaSelect').value = ''; $('memberName').value = (name + ' 副本').slice(0, 80); $('memberContent').value = content; draftDirty = true; $('memberVersion').textContent = '尚未保存的新副本'; $('memberHistoryPanel').hidden = true; $('memberImpact').textContent = '保存副本不会修改原卡，也不会自动应用。'; buttons(); });
+for (const id of ['memberName', 'memberContent']) $(id).addEventListener('input', () => { draftDirty = true; buttons(); });
+$('memberHistorySelect').addEventListener('change', renderHistory);
+$('memberPersonaForm').addEventListener('submit', async event => {
+  event.preventDefault(); if (busy) return; const own = card(), bot = currentBot;
+  if (own?.affectedConversations?.length && !confirm(impactText(own) + '\n确认保存？')) return;
+  busy = true; buttons(); message('正在保存…', false);
+  try { const input = { name: $('memberName').value, content: $('memberContent').value }; if (own) Object.assign(input, { id: own.id, version: loadedVersion }); else if (selected.startsWith('template:')) input.copyFrom = selected.slice(9);
+    const result = await api(memberRoute('personas/' + (own ? 'update' : 'create'), bot), input); if (bot !== currentBot) return; selected = 'own:' + result.persona.id; draftDirty = false; await loadPersonas(); message('已保存版本 ' + result.persona.version + '。应用到会话请点击“应用已保存的人设”。', false); await refresh();
+  } catch (error) { message(error.message + '；编辑内容已保留。', true); } finally { busy = false; buttons(); }
+});
+$('memberApply').addEventListener('click', async () => {
+  if (busy || draftDirty || !selected) return; const key = $('memberApplyKey').value, bot = currentBot; if (!key) return; busy = true; buttons();
+  try { const input = { key }; if (selected === 'inherit') input.inherit = true; else if (selected.startsWith('own:')) input.id = selected.slice(4); else input.templateName = selected.slice(9); await api(memberRoute('personas/apply', bot), input); if (bot !== currentBot) return; await refresh(); await loadPersonas(); message('已应用到所选对象；不会自动发送消息或唤醒模型。', false); }
+  catch (error) { message(error.message, true); } finally { busy = false; buttons(); }
+});
+$('memberRestore').addEventListener('click', async () => {
+  const own = card(); if (!own || busy || !confirmDraft()) return;
+  if (!confirm('恢复为新版本。' + impactText(own) + '\n确认恢复？')) return; busy = true; buttons();
+  try { const result = await api(memberRoute('personas/restore'), { id: own.id, version: loadedVersion, targetVersion: Number($('memberHistorySelect').value) }); draftDirty = false; await loadPersonas(); message('已恢复为版本 ' + result.persona.version + '，原有历史仍保留。', false); }
+  catch (error) { message(error.message, true); } finally { busy = false; buttons(); }
+});
+$('viewerBotSelect').addEventListener('change', async event => {
+  if (busy || !confirmDraft()) { event.target.value = currentBot; return; } currentBot = event.target.value; try { sessionStorage.setItem('qq-viewer-bot', currentBot); } catch {}
+  ++refreshId; personas = []; templates = []; conversationKeys = []; $('memberPersonaSelect').replaceChildren(new Option('新建角色卡', '')); $('memberApplyKey').replaceChildren(); $('viewerConversations').replaceChildren(); clearEditor(); message('', false); await refreshAll();
+});
+$('viewerLogout').addEventListener('click', async () => { try { await api('/api/auth/logout', {}); location.replace('/login'); } catch (error) { $('viewerMessage').textContent = error.message; } });
+$('viewerPasswordForm').addEventListener('submit', async event => { event.preventDefault(); const button = $('viewerPasswordSave'); button.disabled = true; try { const newPassword = $('viewerNewPassword').value; if (newPassword !== $('viewerConfirmPassword').value) throw new Error('两次输入的新密码不一致'); await api('/api/auth/password', { currentPassword: $('viewerCurrentPassword').value, newPassword }); $('viewerPasswordForm').reset(); location.replace('/login'); } catch (error) { $('viewerPasswordMessage').textContent = error.message; $('viewerPasswordMessage').className = 'message error'; button.disabled = false; } });
+(async () => { try {
+  const status = await api('/api/auth/status'); if (!status.authenticated || !status.user) { location.replace('/login'); return; }
+  $('viewerIdentity').textContent = status.user.username + (status.user.role === 'admin' ? ' · 管理员' : ' · 普通账号'); $('viewerAdminLink').hidden = status.user.role !== 'admin';
+  if (status.user.role === 'admin') { try { const accounts = await api('/api/auth/users'); for (const account of accounts.users || []) ownerNames.set(account.id, account.username); } catch {} }
+  const data = await api('/api/bots'); bots = data.bots || []; $('viewerBotSelect').replaceChildren(); for (const bot of bots) $('viewerBotSelect').add(new Option(bot.name + (bot.enabled === false ? '（未启用）' : ''), bot.id));
+  if (!bots.length) { $('viewerBotMessage').textContent = '尚未获得机器人或会话权限，请联系管理员分配。'; $('viewerMessage').textContent = '管理员尚未为此账号分配可管理的会话。'; buttons(); return; }
+  const query = new URLSearchParams(location.search); let saved = query.get('bot'); if (!saved) { try { saved = sessionStorage.getItem('qq-viewer-bot'); } catch {} } currentBot = bots.some(bot => bot.id === saved) ? saved : bots[0].id;
+  const requestedPersona = query.get('persona'); if (/^[a-f0-9]{32}$/.test(requestedPersona || '')) selected = 'own:' + requestedPersona;
+  $('viewerBotSelect').value = currentBot; $('viewerBotSelect').disabled = false; await refreshAll();
+} catch (error) { $('viewerBotMessage').textContent = error.message; $('viewerBotMessage').className = 'message error'; } })();
+</script></body></html>

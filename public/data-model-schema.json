@@ -1,0 +1,2339 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": 1,
+  "schemaHash": "3f3054a455b69b0e75b4d540589a8da54972d826f71dc5a4cc6f40e1cbe5e78a",
+  "source": "src/sqlite-state.js",
+  "tableCount": 26,
+  "tables": [
+    {
+      "name": "state_meta",
+      "label": "存储元信息",
+      "domain": "storage",
+      "description": "管理存储层的元信息。",
+      "sql": "CREATE TABLE state_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "value",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_state_meta_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "state_documents",
+      "label": "兼容文档存储",
+      "domain": "storage",
+      "description": "SQLite 中的文档原文、类型、机器人及修订号，与业务查询表在同一事务更新。",
+      "sql": "CREATE TABLE state_documents (path TEXT PRIMARY KEY, kind TEXT NOT NULL, bot_id TEXT NOT NULL, raw_text TEXT, revision INTEGER NOT NULL CHECK(revision>0), migrated_at INTEGER NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "kind",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "raw_text",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "migrated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_state_documents_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "path"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "accounts",
+      "label": "账号",
+      "domain": "identity",
+      "description": "登录管理页面的人；权限角色为平台管理员或普通账号。",
+      "sql": "CREATE TABLE accounts (id TEXT PRIMARY KEY, document_path TEXT NOT NULL REFERENCES state_documents(path), username TEXT NOT NULL UNIQUE, role TEXT NOT NULL CHECK(role IN ('admin','user')), disabled INTEGER NOT NULL CHECK(disabled IN (0,1)), password_algorithm TEXT NOT NULL, password_salt TEXT NOT NULL, password_hash TEXT NOT NULL, password_version INTEGER NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "disabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "password_algorithm",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "password_salt",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "password_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "accounts_one_admin",
+          "unique": true,
+          "partial": true,
+          "columns": [
+            "role"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_accounts_2",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "username"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_accounts_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "auth_sessions",
+      "label": "登录会话",
+      "domain": "identity",
+      "description": "浏览器登录的有效期和令牌散列，与 AI 对话会话分开。",
+      "sql": "CREATE TABLE auth_sessions (hash TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, password_version INTEGER NOT NULL, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL CHECK(expires_at>created_at)) STRICT",
+      "columns": [
+        {
+          "name": "hash",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "account_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "password_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "expires_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "accounts",
+          "from": [
+            "account_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_auth_sessions_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "hash"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "account_scopes",
+      "label": "平台会话授权",
+      "domain": "identity",
+      "description": "平台管理员授予账号的 botId + 群或私聊范围。",
+      "sql": "CREATE TABLE account_scopes (account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, bot_id TEXT NOT NULL, conversation_key TEXT NOT NULL, PRIMARY KEY(account_id,bot_id,conversation_key)) STRICT",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 3,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "accounts",
+          "from": [
+            "account_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_account_scopes_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "account_id",
+            "bot_id",
+            "conversation_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "persona_identities",
+      "label": "人设稳定身份",
+      "domain": "persona",
+      "description": "对话存档用的稳定人设 ID，支持改名后保持关联。",
+      "sql": "CREATE TABLE persona_identities (bot_id TEXT NOT NULL, id TEXT NOT NULL, document_path TEXT NOT NULL REFERENCES state_documents(path), name TEXT, deleted INTEGER NOT NULL CHECK(deleted IN (0,1)), PRIMARY KEY(bot_id,id)) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "deleted",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "persona_live_names",
+          "unique": true,
+          "partial": true,
+          "columns": [
+            "bot_id",
+            "name"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_persona_identities_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "archive_records",
+      "label": "AI 对话存档",
+      "domain": "persona",
+      "description": "DSH 对话标识、人设、聊天对象及可恢复状态；不保存完整 DSH 聊天正文。",
+      "sql": "CREATE TABLE archive_records (bot_id TEXT NOT NULL, id TEXT NOT NULL, document_path TEXT NOT NULL REFERENCES state_documents(path), conversation_key TEXT NOT NULL, persona_id TEXT NOT NULL, session_id TEXT, policy TEXT, created_at INTEGER NOT NULL, last_used_at INTEGER NOT NULL, blocked INTEGER NOT NULL CHECK(blocked IN (0,1)), missing INTEGER NOT NULL CHECK(missing IN (0,1)), PRIMARY KEY(bot_id,id), UNIQUE(bot_id,session_id), FOREIGN KEY(bot_id,persona_id) REFERENCES persona_identities(bot_id,id)) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "persona_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "session_id",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "policy",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "last_used_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "blocked",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "missing",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "persona_identities",
+          "from": [
+            "bot_id",
+            "persona_id"
+          ],
+          "to": [
+            "bot_id",
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_archive_records_2",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "session_id"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_archive_records_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "selected_sessions",
+      "label": "当前对话存档",
+      "domain": "persona",
+      "description": "某个机器人中的群或私聊当前选中的对话存档。",
+      "sql": "CREATE TABLE selected_sessions (bot_id TEXT NOT NULL, conversation_key TEXT NOT NULL, archive_id TEXT NOT NULL, document_path TEXT NOT NULL REFERENCES state_documents(path), PRIMARY KEY(bot_id,conversation_key), FOREIGN KEY(bot_id,archive_id) REFERENCES archive_records(bot_id,id) ON DELETE CASCADE) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "archive_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "archive_records",
+          "from": [
+            "bot_id",
+            "archive_id"
+          ],
+          "to": [
+            "bot_id",
+            "id"
+          ],
+          "onDelete": "CASCADE"
+        },
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_selected_sessions_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "conversation_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "conversation_roles",
+      "label": "会话人设选择",
+      "domain": "persona",
+      "description": "按机器人和会话保存单独人设；未设置时由全局人设规则继承。",
+      "sql": "CREATE TABLE conversation_roles (bot_id TEXT NOT NULL, conversation_key TEXT NOT NULL, role_name TEXT NOT NULL, document_path TEXT NOT NULL REFERENCES state_documents(path), PRIMARY KEY(bot_id,conversation_key)) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "role_name",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_conversation_roles_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "conversation_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "role_cards",
+      "label": "人设正文",
+      "domain": "persona",
+      "description": "原项目角色卡的名称、正文与机器人归属。",
+      "sql": "CREATE TABLE role_cards (path TEXT PRIMARY KEY REFERENCES state_documents(path), bot_id TEXT NOT NULL, name TEXT NOT NULL, content TEXT NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_role_cards_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "path"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "role_materializations",
+      "label": "人设文件同步",
+      "domain": "storage",
+      "description": "跟踪数据库正文向兼容 Markdown 文件同步的修订。",
+      "sql": "CREATE TABLE role_materializations (path TEXT PRIMARY KEY REFERENCES state_documents(path), revision INTEGER NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "revision",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_role_materializations_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "path"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bots",
+      "label": "机器人连接",
+      "domain": "identity",
+      "description": "工作实例的 QQ 身份、内部连接及启用状态；主机器人目前由配置提供。",
+      "sql": "CREATE TABLE bots (id TEXT PRIMARY KEY, document_path TEXT NOT NULL REFERENCES state_documents(path), name TEXT NOT NULL, expected_qq TEXT NOT NULL, actual_qq TEXT, port INTEGER NOT NULL, machine_token TEXT NOT NULL, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)), verified_at INTEGER, deleted INTEGER NOT NULL CHECK(deleted IN (0,1))) STRICT",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "expected_qq",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "actual_qq",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "port",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "machine_token",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "verified_at",
+          "type": "INTEGER",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "deleted",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "bots_live_port",
+          "unique": true,
+          "partial": true,
+          "columns": [
+            "port"
+          ]
+        },
+        {
+          "name": "bots_live_qq",
+          "unique": true,
+          "partial": true,
+          "columns": [
+            "expected_qq"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_bots_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "member_cards",
+      "label": "用户自建人设",
+      "domain": "persona",
+      "description": "用户所有的人设卡、当前版本及稳定内部名称。",
+      "sql": "CREATE TABLE member_cards (bot_id TEXT NOT NULL, id TEXT NOT NULL, document_path TEXT NOT NULL REFERENCES state_documents(path), owner_user_id TEXT NOT NULL, internal_role_name TEXT NOT NULL, name TEXT NOT NULL, content TEXT NOT NULL, version INTEGER NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(bot_id,id), UNIQUE(bot_id,internal_role_name)) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "owner_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "internal_role_name",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_member_cards_2",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "internal_role_name"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_member_cards_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "member_revisions",
+      "label": "人设修改历史",
+      "domain": "persona",
+      "description": "每一版本正文、名称、作者和修改时间。",
+      "sql": "CREATE TABLE member_revisions (bot_id TEXT NOT NULL, card_id TEXT NOT NULL, version INTEGER NOT NULL, name TEXT NOT NULL, content TEXT NOT NULL, created_at INTEGER NOT NULL, author_user_id TEXT NOT NULL, PRIMARY KEY(bot_id,card_id,version), FOREIGN KEY(bot_id,card_id) REFERENCES member_cards(bot_id,id) ON DELETE CASCADE) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "card_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 3,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "author_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "member_cards",
+          "from": [
+            "bot_id",
+            "card_id"
+          ],
+          "to": [
+            "bot_id",
+            "id"
+          ],
+          "onDelete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_member_revisions_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "card_id",
+            "version"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "budget_settings",
+      "label": "机器人默认预算",
+      "domain": "budget",
+      "description": "人民币默认日额度、默认调用预留及启用状态。",
+      "sql": "CREATE TABLE budget_settings (bot_id TEXT PRIMARY KEY, document_path TEXT NOT NULL REFERENCES state_documents(path), config_version INTEGER NOT NULL, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)), default_limit_micros INTEGER NOT NULL CHECK(default_limit_micros>=0), default_reservation_micros INTEGER NOT NULL CHECK(default_reservation_micros>0), lease_ms INTEGER NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "config_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "default_limit_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "default_reservation_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "lease_ms",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_budget_settings_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "budget_overrides",
+      "label": "会话单独预算",
+      "domain": "budget",
+      "description": "某个群或私聊覆盖机器人默认预算的设置。",
+      "sql": "CREATE TABLE budget_overrides (bot_id TEXT NOT NULL REFERENCES budget_settings(bot_id) ON DELETE CASCADE, conversation_key TEXT NOT NULL, enabled INTEGER CHECK(enabled IN (0,1)), limit_micros INTEGER CHECK(limit_micros>=0), PRIMARY KEY(bot_id,conversation_key)) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "limit_micros",
+          "type": "INTEGER",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "budget_settings",
+          "from": [
+            "bot_id"
+          ],
+          "to": [
+            "bot_id"
+          ],
+          "onDelete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_budget_overrides_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "conversation_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "budget_reservations",
+      "label": "在途费用预留",
+      "domain": "budget",
+      "description": "调用前占用的额度、请求／回合关联及结算状态。",
+      "sql": "CREATE TABLE budget_reservations (bot_id TEXT NOT NULL REFERENCES budget_settings(bot_id) ON DELETE CASCADE, id TEXT NOT NULL, conversation_key TEXT NOT NULL, day TEXT NOT NULL, amount_micros INTEGER NOT NULL CHECK(amount_micros>0), observed_micros INTEGER NOT NULL CHECK(observed_micros>=0), state TEXT NOT NULL CHECK(state IN ('active','settled','released','expired')), operation_id TEXT, session_id TEXT, turn_id TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, settled_at INTEGER, actual_micros INTEGER, PRIMARY KEY(bot_id,id), UNIQUE(bot_id,operation_id)) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "day",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "amount_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "observed_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "operation_id",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "session_id",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "turn_id",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "expires_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "settled_at",
+          "type": "INTEGER",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "actual_micros",
+          "type": "INTEGER",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "budget_settings",
+          "from": [
+            "bot_id"
+          ],
+          "to": [
+            "bot_id"
+          ],
+          "onDelete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_budget_reservations_2",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "operation_id"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_budget_reservations_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "budget_days",
+      "label": "每日预算高水位",
+      "domain": "budget",
+      "description": "每天已观察到的估算支出；用于准入控制，供应商实际账单另行核对。",
+      "sql": "CREATE TABLE budget_days (bot_id TEXT NOT NULL REFERENCES budget_settings(bot_id) ON DELETE CASCADE, conversation_key TEXT NOT NULL, day TEXT NOT NULL, spent_micros INTEGER NOT NULL CHECK(spent_micros>=0), PRIMARY KEY(bot_id,conversation_key,day)) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "day",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 3,
+          "default": null
+        },
+        {
+          "name": "spent_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "budget_settings",
+          "from": [
+            "bot_id"
+          ],
+          "to": [
+            "bot_id"
+          ],
+          "onDelete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_budget_days_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "conversation_key",
+            "day"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant_settings",
+      "label": "平台试用规则",
+      "domain": "budget",
+      "description": "试用开关、个人默认日额度、平台试用总日额度及密钥版本指纹。",
+      "sql": "CREATE TABLE tenant_settings (document_path TEXT PRIMARY KEY REFERENCES state_documents(path), master_key_id TEXT, trial_version INTEGER NOT NULL, trial_enabled INTEGER NOT NULL CHECK(trial_enabled IN (0,1)), trial_daily_micros INTEGER NOT NULL CHECK(trial_daily_micros>=0), trial_total_daily_micros INTEGER NOT NULL CHECK(trial_total_daily_micros>=0)) STRICT",
+      "columns": [
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "master_key_id",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "trial_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "trial_enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "trial_daily_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "trial_total_daily_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "state_documents",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenant_settings_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "document_path"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant_profiles",
+      "label": "用户模型配置",
+      "domain": "identity",
+      "description": "用户自己的供应商、模型及加密 API Key；保存 Key 不改变资源权限。",
+      "sql": "CREATE TABLE tenant_profiles (id TEXT PRIMARY KEY, document_path TEXT NOT NULL REFERENCES tenant_settings(document_path), owner_user_id TEXT NOT NULL REFERENCES accounts(id), name TEXT NOT NULL, model TEXT NOT NULL, version INTEGER NOT NULL, provider TEXT NOT NULL, enabled INTEGER NOT NULL CHECK(enabled IN (0,1)), deleted INTEGER NOT NULL CHECK(deleted IN (0,1)), cipher_version INTEGER NOT NULL, iv TEXT NOT NULL, auth_tag TEXT NOT NULL, ciphertext TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, invalid_reason TEXT) STRICT",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "owner_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "model",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "provider",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "deleted",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "cipher_version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "iv",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "auth_tag",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "ciphertext",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "invalid_reason",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "accounts",
+          "from": [
+            "owner_user_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "tenant_settings",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "document_path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenant_profiles_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant_qq_bindings",
+      "label": "本人 QQ 身份",
+      "domain": "identity",
+      "description": "账号与实际验证过的 QQ 关联，目前一账号对应一个 QQ。",
+      "sql": "CREATE TABLE tenant_qq_bindings (qq TEXT PRIMARY KEY, document_path TEXT NOT NULL REFERENCES tenant_settings(document_path), user_id TEXT NOT NULL UNIQUE REFERENCES accounts(id), verified_at INTEGER NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "qq",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "verified_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "accounts",
+          "from": [
+            "user_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "tenant_settings",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "document_path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenant_qq_bindings_2",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "user_id"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_tenant_qq_bindings_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "qq"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant_binding_challenges",
+      "label": "QQ 验证申请",
+      "domain": "identity",
+      "description": "一次码散列、有效期、失败次数及消费时间。",
+      "sql": "CREATE TABLE tenant_binding_challenges (id TEXT PRIMARY KEY, document_path TEXT NOT NULL REFERENCES tenant_settings(document_path), user_id TEXT NOT NULL REFERENCES accounts(id), qq TEXT NOT NULL, code_hash TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, attempts INTEGER NOT NULL CHECK(attempts>=0 AND attempts<=5), consumed_at INTEGER) STRICT",
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "qq",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "code_hash",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "expires_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "attempts",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "consumed_at",
+          "type": "INTEGER",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "accounts",
+          "from": [
+            "user_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "tenant_settings",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "document_path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenant_binding_challenges_2",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "code_hash"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_tenant_binding_challenges_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant_owned_bots",
+      "label": "机器人归属",
+      "domain": "identity",
+      "description": "账号对自有机器人的所有权；所有者管理该机器人的业务。",
+      "sql": "CREATE TABLE tenant_owned_bots (bot_id TEXT PRIMARY KEY, document_path TEXT NOT NULL REFERENCES tenant_settings(document_path), owner_user_id TEXT NOT NULL REFERENCES accounts(id), name TEXT NOT NULL, qq TEXT NOT NULL UNIQUE, version INTEGER NOT NULL, verified_at INTEGER NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "owner_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "qq",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "verified_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "accounts",
+          "from": [
+            "owner_user_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "tenant_settings",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "document_path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenant_owned_bots_2",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "qq"
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_tenant_owned_bots_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant_delegations",
+      "label": "机器人成员授权",
+      "domain": "identity",
+      "description": "所有者将自己机器人的具体群或私聊授权给其他账号。",
+      "sql": "CREATE TABLE tenant_delegations (bot_id TEXT NOT NULL REFERENCES tenant_owned_bots(bot_id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES accounts(id), conversation_key TEXT NOT NULL, version INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(bot_id,user_id,conversation_key)) STRICT",
+      "columns": [
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 3,
+          "default": null
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "accounts",
+          "from": [
+            "user_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "tenant_owned_bots",
+          "from": [
+            "bot_id"
+          ],
+          "to": [
+            "bot_id"
+          ],
+          "onDelete": "CASCADE"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenant_delegations_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "user_id",
+            "conversation_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant_funding",
+      "label": "费用来源绑定",
+      "domain": "budget",
+      "description": "选择本人私聊或自有机器人使用的模型配置；平台／试用来源还通过业务规则判断。",
+      "sql": "CREATE TABLE tenant_funding (document_path TEXT NOT NULL REFERENCES tenant_settings(document_path), bot_id TEXT NOT NULL, conversation_key TEXT NOT NULL, owner_user_id TEXT NOT NULL REFERENCES accounts(id), profile_id TEXT REFERENCES tenant_profiles(id), version INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(bot_id,conversation_key)) STRICT",
+      "columns": [
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "bot_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "conversation_key",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 2,
+          "default": null
+        },
+        {
+          "name": "owner_user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "profile_id",
+          "type": "TEXT",
+          "notNull": false,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "tenant_profiles",
+          "from": [
+            "profile_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "accounts",
+          "from": [
+            "owner_user_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "tenant_settings",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "document_path"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenant_funding_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "bot_id",
+            "conversation_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant_trial_overrides",
+      "label": "用户试用覆盖",
+      "domain": "budget",
+      "description": "个别账号的试用额度和开关。",
+      "sql": "CREATE TABLE tenant_trial_overrides (user_id TEXT PRIMARY KEY REFERENCES accounts(id), document_path TEXT NOT NULL REFERENCES tenant_settings(document_path), enabled INTEGER NOT NULL CHECK(enabled IN (0,1)), daily_micros INTEGER NOT NULL CHECK(daily_micros>=0), version INTEGER NOT NULL, updated_at INTEGER NOT NULL) STRICT",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 1,
+          "default": null
+        },
+        {
+          "name": "document_path",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "daily_micros",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        },
+        {
+          "name": "updated_at",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKeyPosition": 0,
+          "default": null
+        }
+      ],
+      "foreignKeys": [
+        {
+          "target": "tenant_settings",
+          "from": [
+            "document_path"
+          ],
+          "to": [
+            "document_path"
+          ],
+          "onDelete": "NO ACTION"
+        },
+        {
+          "target": "accounts",
+          "from": [
+            "user_id"
+          ],
+          "to": [
+            "id"
+          ],
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenant_trial_overrides_1",
+          "unique": true,
+          "partial": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      ]
+    }
+  ],
+  "indexes": [
+    {
+      "name": "accounts_one_admin",
+      "sql": "CREATE UNIQUE INDEX accounts_one_admin ON accounts(role) WHERE role='admin'"
+    },
+    {
+      "name": "persona_live_names",
+      "sql": "CREATE UNIQUE INDEX persona_live_names ON persona_identities(bot_id,name) WHERE deleted=0 AND name IS NOT NULL"
+    },
+    {
+      "name": "bots_live_qq",
+      "sql": "CREATE UNIQUE INDEX bots_live_qq ON bots(expected_qq) WHERE deleted=0"
+    },
+    {
+      "name": "bots_live_port",
+      "sql": "CREATE UNIQUE INDEX bots_live_port ON bots(port) WHERE deleted=0"
+    }
+  ],
+  "logicalRelations": [
+    {
+      "parent": "bots",
+      "child": "tenant_owned_bots",
+      "from": "id",
+      "to": "bot_id",
+      "cardinality": "1 : 0..1",
+      "label": "连接与所有权"
+    },
+    {
+      "parent": "bots",
+      "child": "account_scopes",
+      "from": "id",
+      "to": "bot_id",
+      "cardinality": "1 : 多",
+      "label": "机器人范围"
+    },
+    {
+      "parent": "bots",
+      "child": "tenant_delegations",
+      "from": "id",
+      "to": "bot_id",
+      "cardinality": "1 : 多",
+      "label": "机器人内授权"
+    },
+    {
+      "parent": "bots",
+      "child": "tenant_funding",
+      "from": "id",
+      "to": "bot_id",
+      "cardinality": "1 : 多",
+      "label": "费用来源"
+    },
+    {
+      "parent": "bots",
+      "child": "budget_settings",
+      "from": "id",
+      "to": "bot_id",
+      "cardinality": "1 : 0..1",
+      "label": "默认预算"
+    },
+    {
+      "parent": "accounts",
+      "child": "member_cards",
+      "from": "id",
+      "to": "owner_user_id",
+      "cardinality": "1 : 多",
+      "label": "人设所有者（跨实例）"
+    },
+    {
+      "parent": "accounts",
+      "child": "member_revisions",
+      "from": "id",
+      "to": "author_user_id",
+      "cardinality": "1 : 多",
+      "label": "修改作者（跨实例）"
+    },
+    {
+      "parent": "role_cards",
+      "child": "member_cards",
+      "from": "name",
+      "to": "internal_role_name",
+      "cardinality": "1 : 0..1",
+      "label": "正文兼容映射"
+    },
+    {
+      "parent": "role_cards",
+      "child": "persona_identities",
+      "from": "name",
+      "to": "name",
+      "cardinality": "1 : 0..1",
+      "label": "存档人设身份"
+    },
+    {
+      "parent": "role_cards",
+      "child": "conversation_roles",
+      "from": "name",
+      "to": "role_name",
+      "cardinality": "1 : 多",
+      "label": "按名选择人设"
+    }
+  ]
+}

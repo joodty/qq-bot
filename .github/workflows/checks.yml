@@ -1,0 +1,22 @@
+name: Public source and core tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  isolated-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24.22.0
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/patch-snowluma-sdk.mjs
+      - run: npm run check:public
+      - run: node scripts/check-publication.mjs --ref HEAD
+      - run: npm run test:core
