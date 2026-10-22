@@ -1,0 +1,22 @@
+{
+  "root": "/var/lib/qq-hosted",
+  "codeRoot": "/opt/qq-bot/code",
+  "dockerBin": "/usr/bin/docker",
+  "dockerSocket": "/run/docker.sock",
+  "image": "example.invalid/qq-runtime@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "startScript": "/opt/qq-bot/runtime/start.sh",
+  "nodeBin": "/opt/qq-bot/node/bin/node",
+  "dshBin": "/opt/qq-bot/dsh-package/node_modules/.bin/dsh",
+  "dshModules": "/opt/qq-bot/dsh-package/node_modules",
+  "slirpBin": "/usr/bin/slirp4netns",
+  "slirpLib": "/usr/lib/x86_64-linux-gnu",
+  "setprivBin": "/usr/bin/setpriv",
+  "nsenterBin": "/usr/bin/nsenter",
+  "ipBin": "/usr/sbin/ip",
+  "port": 32109,
+  "basePort": 32400,
+  "maxBots": 1,
+  "uidBase": 200000,
+  "gidBase": 200000,
+  "token": "example-generate-a-random-32-byte-secret"
+}

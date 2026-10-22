@@ -18,6 +18,7 @@
 | [MEMBER_NAVIGATION](guides/MEMBER_NAVIGATION.md) | 普通账号的页面层级、新手步骤、手机导航和文案 |
 | [TENANT_SPACES](guides/TENANT_SPACES.md)、[USER_WORKSPACE](guides/USER_WORKSPACE.md) | 本人 QQ、自带 Key、费用来源、归属和会话委托 |
 | [BOT_ONBOARDING](guides/BOT_ONBOARDING.md) | 无需用户提供机器凭据的开通申请与实际核验 |
+| [WEB_QQ_LOGIN](guides/WEB_QQ_LOGIN.md) | 网页扫码接入、自助实例、重连、隔离与部署前提 |
 | [MEMBER_PERSONAS](guides/MEMBER_PERSONAS.md) | 授权范围内编辑和切换人设 |
 | [SQLITE_STORAGE](guides/SQLITE_STORAGE.md) | 管理数据迁移、文档投影与外部存储边界 |
 | [MULTI_BOT_DESIGN](guides/MULTI_BOT_DESIGN.md)、[MULTI_BOT_SETUP](guides/MULTI_BOT_SETUP.md) | 统一管理与独立实例的架构、准备步骤 |

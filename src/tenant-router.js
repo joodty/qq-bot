@@ -55,8 +55,9 @@ export function createTenantRouter({ service, auth, manager, budget, readUsage =
         if(req.method!=='POST')throw fail(405,'请求方法不支持');
         if(!onboarding)throw fail(503,'机器人开通申请服务尚未就绪');
         if(typeof writeAllowed!=='function')throw fail(503,'缺少浏览器写入来源校验');writeAllowed();
-        const body=await readBody(),actions={'/api/tenant/bot-requests':'create','/api/tenant/bot-requests/prepare':'prepare','/api/tenant/bot-requests/activate':'activate','/api/tenant/bot-requests/reject':'reject'};
-        const action=actions[path];if(!action)throw fail(404,'申请操作不存在');send({ok:true,request:await onboarding[action](onboardingPrincipal,body)});return true;
+        const body=await readBody(),actions={'/api/tenant/bot-requests':'create','/api/tenant/bot-requests/prepare':'prepare','/api/tenant/bot-requests/activate':'activate','/api/tenant/bot-requests/reject':'reject',
+          '/api/tenant/bot-requests/login/start':'startLogin','/api/tenant/bot-requests/login/check':'checkLogin','/api/tenant/bot-requests/login/refresh':'refreshLogin','/api/tenant/bot-requests/login/cancel':'cancelLogin'};
+        const action=actions[path];if(!action)throw fail(404,'申请操作不存在');const result=await onboarding[action](onboardingPrincipal,body);send({ok:true,...(action.endsWith('Login')?result:{request:result})});return true;
       }
       const posts = ['profiles/save', 'profiles/delete', 'binding/issue', 'funding', 'trial', 'budget', 'bots', 'delegations'];
       if (!posts.some(suffix => path === '/api/tenant/' + suffix)) throw fail(404, '用户空间接口不存在');

@@ -1,0 +1,22 @@
+[Unit]
+Description=Private hosted QQ login broker
+After=network.target docker.service
+
+[Service]
+Type=simple
+ExecStart=/opt/qq-bot/node/bin/node /opt/qq-bot/code/scripts/hosted-login-service.mjs /etc/qq-hosted-login.json
+WorkingDirectory=/opt/qq-bot/code
+Restart=on-failure
+RestartSec=5
+MemoryMax=512M
+CPUQuota=100%
+OOMScoreAdjust=500
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/qq-hosted
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

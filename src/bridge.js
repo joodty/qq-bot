@@ -43,6 +43,7 @@ import { createBudgetController } from './budget-controller.js';
 import { createTenantService } from './tenant-service.js';
 import { createTenantRouter } from './tenant-router.js';
 import { createBotOnboarding } from './bot-onboarding.js';
+import { createHostedLoginClient } from './hosted-login-client.js';
 import { createTenantRuntime } from './tenant-runtime.js';
 import { createTrialBudget } from './trial-budget.js';
 import {
@@ -3597,7 +3598,8 @@ async function main() {
       return { ok: true, botId: BOT_ID, status: { dshReady, qqOnline: !!snowlumaHealth.accountOnline }, conversations,
         from: dates.from, to: dates.to, currency: dates.currency, symbol: dates.symbol };
     };
-    const botOnboarding = tenantService && botManager ? createBotOnboarding({ storage:documentStorage, file:path.join(STATE_DIR,'bot-onboarding.json'), service:tenantService, auth:consoleAuth, manager:botManager }) : null;
+    const botOnboarding = tenantService && botManager ? createBotOnboarding({ storage:documentStorage, file:path.join(STATE_DIR,'bot-onboarding.json'), service:tenantService, auth:consoleAuth, manager:botManager,
+      loginProvider:createHostedLoginClient({file:path.join(STATE_DIR,'bot-login-provider.json')}) }) : null;
     const tenantRoutes = tenantService ? createTenantRouter({service:tenantService,auth:consoleAuth,manager:botManager,budget:conversationBudget,onboarding:botOnboarding,
       platformBot:()=>({name:selfDisplayName||'平台机器人',qq:selfUserId||cfg.expectedQQ||null,online:!!snowlumaHealth.accountOnline}),
       readUsage:async(principal,overview)=>{
@@ -3680,7 +3682,7 @@ async function main() {
       }
       const SECURITY_HEADERS = {
         'X-Frame-Options': 'DENY',
-        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:",
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'no-referrer'
