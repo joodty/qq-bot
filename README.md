@@ -4,6 +4,8 @@
 
 **中文** · [English](README.en.md) · [项目交接](docs/HANDOFF.md) · [设计取舍与修正](docs/DESIGN_DECISIONS.md) · [开发步骤](docs/DEVELOPMENT.md) · [工作记录](docs/WORK_LOG.md)
 
+**开发方向更新（2026-10-22）**：下一阶段基于 [QQ Agent fork](https://github.com/joodty/QQ-agent/tree/codex/group-management) 扩展公共机器人下的群管理与通用预算。本仓库的账号、权限、费用与测试成果作为迁移基础保留；现有部署和运行数据不因拉取新底座而切换。详见 [可复用功能与迁移边界](docs/guides/QQ_AGENT_MIGRATION.md)。
+
 ## 当前能力
 
 - 群聊、私聊及管理员私聊可独立选择人设，未设置沿用全局。

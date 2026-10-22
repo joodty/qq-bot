@@ -2,6 +2,8 @@
 
 更新日期：2026-10-22。公开仓库：[joodty/qq-bot](https://github.com/joodty/qq-bot)，默认分支 `main`。本文件不包含服务器连接或 API 私密信息。
 
+**当前方向**：所有者决定基于 [joodty/QQ-agent](https://github.com/joodty/QQ-agent/tree/codex/group-management) 继续开发，集中完善公共机器人下的群/私聊管理。旧仓库保留线上维护与迁移参考，运行数据继续由旧系统负责。先看 [迁移说明](guides/QQ_AGENT_MIGRATION.md)；新仓库的独立基础模块不代表账号、聊天、费用或数据迁移已经完成。
+
 ## 这是什么项目
 
 基于 [Derpyu520/qq-bridge](https://github.com/Derpyu520/qq-bridge) 的 QQ AI 机器人管理扩展，保留 MIT 许可与原作者署名。基础链路是 QQ → SnowLuma / OneBot → Bridge → DeepSeek Harness（DSH）；另有用户自带 Key 的独立聊天路径。此公开仓库不是对上游完整 Git 历史的镜像：最初来自既有运行源码快照，首次公开使用经过脱敏的当前源码起点，原始快照留在本机，不随公开分支上传。

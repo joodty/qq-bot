@@ -2,6 +2,8 @@
 
 先读 [项目交接](docs/HANDOFF.md)、[设计决策](docs/DESIGN_DECISIONS.md)、[开发步骤](docs/DEVELOPMENT.md) 和 [最近工作记录](docs/WORK_LOG.md)。这些文档适用于 Codex、WorkBuddy、其他 AI 及人工开发者；具体代码和当前用户要求优先。
 
+2026-10-22 起，新产品开发转到 [joodty/QQ-agent](https://github.com/joodty/QQ-agent) 的 `codex/group-management` 分支。本仓库保留线上兼容维护与迁移参考；下一阶段先围绕公共机器人、群/私聊管理和统一聊天能力开发，不继续扩张私人 QQ 托管。先读 [迁移说明](docs/guides/QQ_AGENT_MIGRATION.md)，不要把新底座已拉取误认为已替换生产服务。
+
 ## 工作约定
 
 - 先检查 `git status`、当前分支、远端与相关实现，保留用户和其他协作者的修改。
